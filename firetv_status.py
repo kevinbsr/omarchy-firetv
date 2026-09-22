@@ -35,6 +35,14 @@ APP_NAMES = {
 
 SHORTCUT_PACKAGES = tuple(package for package in APP_NAMES
                           if package != "com.amazon.tv.launcher")
+APP_ICON_PATHS = {
+    "com.amazon.firetv.youtube": "/usr/share/icons/Papirus/64x64/apps/youtube.svg",
+    "com.google.android.youtube.tv": "/usr/share/icons/Papirus/64x64/apps/youtube.svg",
+    "com.netflix.ninja": "/usr/share/icons/Papirus/64x64/apps/netflix.svg",
+    "com.spotify.tv.android": "/usr/share/icons/hicolor/64x64/apps/spotify.png",
+    "com.plexapp.android": "/usr/share/icons/Papirus/64x64/apps/plex-htpc.svg",
+    "org.jellyfin.androidtv": "/usr/share/icons/Papirus/64x64/apps/jellyfin.svg",
+}
 HISTORY_PATH = Path.home() / ".local/state/omarchy/firetv/history.json"
 HISTORY_BASELINE_PATH = HISTORY_PATH.with_name("history-baseline.txt")
 
@@ -259,6 +267,11 @@ def foreground_package(text):
     return match.group(1) if match else ""
 
 
+def app_icon_path(package):
+    path = APP_ICON_PATHS.get(package, "")
+    return path if path and Path(path).is_file() else ""
+
+
 def snapshot(serial):
     state, error = adb(serial, "get-state", timeout=3)
     if state is None or state.strip() != "device":
@@ -300,6 +313,7 @@ def snapshot(serial):
         "status": "playing" if playing else "paused" if paused else "app",
         "app": APP_NAMES.get(package, package.split(".")[-1]),
         "package": package,
+        "appIconPath": app_icon_path(package),
         "title": reported_title,
         "artist": selected["artist"] if selected else "",
         "album": selected["album"] if selected else "",

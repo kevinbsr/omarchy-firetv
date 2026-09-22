@@ -11,6 +11,7 @@ BarWidget {
   property string status: "checking"
   property string app: ""
   property string packageName: ""
+  property string appIconPath: ""
   property string title: ""
   property string artist: ""
   property string album: ""
@@ -35,16 +36,7 @@ BarWidget {
   readonly property bool notificationsEnabled: Boolean(root.setting("notificationsEnabled", true))
   readonly property bool historyEnabled: Boolean(root.setting("historyEnabled", false))
 
-  readonly property string appIconSource: {
-    var icons = {
-      "com.amazon.firetv.youtube": "file:///usr/share/icons/Papirus/64x64/apps/youtube.svg",
-      "com.google.android.youtube.tv": "file:///usr/share/icons/Papirus/64x64/apps/youtube.svg",
-      "com.netflix.ninja": "file:///usr/share/icons/Papirus/64x64/apps/netflix.svg",
-      "com.spotify.tv.android": "file:///usr/share/icons/hicolor/64x64/apps/spotify.png",
-      "com.plexapp.android": "file:///usr/share/icons/Papirus/64x64/apps/plex-htpc.svg"
-    }
-    return icons[packageName] || ""
-  }
+  readonly property string appIconSource: appIconPath ? "file://" + appIconPath : ""
   readonly property bool connected: status !== "offline" && status !== "unauthorized" &&
                                     status !== "not-configured" &&
                                     status !== "checking" && status !== "unknown"
@@ -182,6 +174,7 @@ BarWidget {
       status = String(result.status || "unknown")
       app = String(result.app || "")
       packageName = String(result.package || "")
+      appIconPath = String(result.appIconPath || "")
       title = String(result.title || "")
       artist = String(result.artist || "")
       album = String(result.album || "")
@@ -195,7 +188,8 @@ BarWidget {
         ? packageName + "\n" + title : ""
       if (hasSeenSnapshot && mediaKey && mediaKey !== lastMediaKey &&
           notificationsEnabled && !privacyMode && ownsNotifications())
-        Quickshell.execDetached(["notify-send", "-a", "Fire TV", "-i", "video-display",
+        Quickshell.execDetached(["notify-send", "-a", "Fire TV", "-i",
+                                 appIconPath || pathFromUrl(Qt.resolvedUrl("firetv-icon.svg")),
                                  "Now watching on " + app, title])
       lastMediaKey = mediaKey
       hasSeenSnapshot = true
@@ -203,6 +197,7 @@ BarWidget {
       status = "offline"
       app = ""
       packageName = ""
+      appIconPath = ""
       title = ""
       artist = ""
       album = ""

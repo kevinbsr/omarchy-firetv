@@ -14,7 +14,9 @@ Home. Rewind and Forward occupy the next row's corners when the active app
 advertises those media actions; their
 step size is decided by that app. Artist and album appear when the media
 session reports them. If the session exposes a usable HTTP or file artwork
-URI, the panel displays it in place of the app icon. Fire OS often exposes
+URI, the panel displays it in place of the app icon. Title-change alerts use
+the installed desktop logo for YouTube, Netflix, Spotify, Plex, or Jellyfin
+when available; other apps use the plugin's bundled TV icon. Fire OS often exposes
 only a title through ADB, so the app icon remains the normal fallback.
 On this stick, Prime Video reports the placeholder title `PrimeVideo` during
 playback; the widget shows the app name until Prime exposes a real title.

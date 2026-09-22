@@ -6,6 +6,12 @@ The widget talks to the stick over Android Debug Bridge (ADB). It does not requi
 
 ![Fire TV Now Playing panel showing the remote and installed app shortcuts](preview.png)
 
+## Compatibility
+
+**Tested:** Fire TV Stick HD running Fire OS 7 (Android 9). The plugin requires Android ADB over the network on port 5555 and reads `dumpsys media_session` and `dumpsys window` output. Amazon also ships Android-based Fire OS 5, 6, 8, 14, and 16 devices, but this plugin has not been tested on them. ADB connection and basic remote keys may work; title detection and app shortcuts depend on each device's command output and installed packages.
+
+**Not supported:** Vega OS devices, including the Fire TV Stick 4K Select (2025) and Fire TV Stick HD (2026). They use a different operating system and developer toolchain. Check the device's release year and OS version; the name “Fire TV Stick HD” alone is not enough to identify compatibility. Amazon lists models and OS versions in its [Fire TV device specifications](https://www.developer.amazon.com/docs/device-specs/identify-fire-tv-devices.html).
+
 ## Requirements
 
 - Omarchy with the Quattro plugin system.

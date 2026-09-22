@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "kevin.firetv",
+  "name": "Fire TV Now Playing",
+  "version": "1.4.0",
+  "author": "Kevin",
+  "description": "Fire TV playback, remote, app shortcuts, text entry, connection health, and optional local timeline.",
+  "kinds": ["bar-widget"],
+  "entryPoints": { "barWidget": "BarWidget.qml" },
+  "barWidget": {
+    "displayName": "Fire TV Now Playing",
+    "description": "Playback, remote, installed app shortcuts, text entry, alerts, and optional timeline",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": { "host": "", "refreshIntervalSec": 15, "notificationsEnabled": true, "privacyMode": false, "historyEnabled": false },
+    "schema": [
+      { "key": "host", "type": "string", "label": "Fire TV IP address", "defaultValue": "" },
+      { "key": "refreshIntervalSec", "type": "integer", "label": "Refresh interval (seconds)", "min": 10, "max": 120, "defaultValue": 15 },
+      { "key": "notificationsEnabled", "type": "boolean", "label": "Title change alerts", "defaultValue": true },
+      { "key": "privacyMode", "type": "boolean", "label": "Hide titles from tooltips and alerts", "defaultValue": false },
+      { "key": "historyEnabled", "type": "boolean", "label": "Record a local viewing timeline", "defaultValue": false }
+    ]
+  }
+}

@@ -64,12 +64,16 @@ computer. If Developer options is hidden, select the device name under
 be on the same network. The plugin saves the authorized IP in Omarchy's shell settings; use
 **Change Fire TV** in the panel if it moves to another address.
 
-For remote access, install Tailscale on the stick from the Amazon Appstore,
-approve its VPN prompt, and scan its login QR code with a phone. The computer
-must be in the same tailnet. Enter the stick's `100.x.y.z` Tailscale IP manually
-in the plugin; local discovery does not scan the tailnet. The connection still
-uses ADB debugging on port 5555 and may require a fresh authorization prompt
-on the TV. Test `adb connect <tailscale-ip>:5555` before switching the plugin.
+For remote access, install Tailscale from the Amazon Appstore where it is
+available. If the store does not offer it for the stick, download the official
+stable universal Android APK from `https://pkgs.tailscale.com/stable/` and
+sideload it with `adb install -r <downloaded-apk>`. The APK requires Android 8
+or newer and does not update automatically. Approve the VPN prompt on the TV,
+then scan its login QR code with a phone. The computer must be in the same
+tailnet. Enter the stick's `100.x.y.z` Tailscale IP manually in the plugin;
+local discovery does not scan the tailnet. The connection still uses ADB
+debugging on port 5555 and may require a fresh authorization prompt on the TV.
+Test `adb connect <tailscale-ip>:5555` before switching the plugin.
 
 Omarchy needs `adb` from `android-tools`. If it is not already installed, run
 `omarchy pkg add android-tools` in a terminal. For LAN use, no additional

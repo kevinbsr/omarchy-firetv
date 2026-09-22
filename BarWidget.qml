@@ -520,43 +520,6 @@ BarWidget {
       }
 
       Row {
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: Style.space(12)
-        visible: root.status === "playing" || root.status === "paused"
-
-        Repeater {
-          model: ["previous", "play-pause", "next"]
-
-          Rectangle {
-            id: controlButton
-            readonly property string actionId: modelData
-            width: Style.space(actionId === "play-pause" ? 46 : 38)
-            height: width
-            radius: width / 2
-            color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
-            enabled: root.actionAvailable(actionId) && !controlProc.running
-            opacity: enabled ? 1 : 0.4
-
-            Text {
-              anchors.centerIn: parent
-              text: controlButton.actionId === "previous" ? "󰒮" :
-                    controlButton.actionId === "next" ? "󰒭" :
-                    root.status === "playing" ? "󰏤" : "󰐊"
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-              font.pixelSize: Style.font.subtitle
-            }
-
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: controlButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-              onClicked: root.runControl(controlButton.actionId)
-            }
-          }
-        }
-      }
-
-      Row {
         width: parent.width
         spacing: Style.space(12)
 
@@ -579,22 +542,28 @@ BarWidget {
             spacing: Style.space(5)
 
             Repeater {
-              model: ["rewind", "up", "fast-forward",
+              model: ["previous", "play-pause", "next",
+                      "rewind", "up", "fast-forward",
                       "left", "select", "right",
                       "back", "down", "home"]
               Rectangle {
                 id: remoteKey
                 readonly property string actionId: modelData
+                readonly property bool isPlayback: actionId === "previous" || actionId === "play-pause" || actionId === "next"
                 readonly property bool isSeek: actionId === "rewind" || actionId === "fast-forward"
                 width: Style.space(39)
                 height: width
                 radius: Style.space(9)
-                color: enabled ? (root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434") : "transparent"
-                enabled: !controlProc.running && (isSeek ? root.actionAvailable(actionId) : root.remoteAvailable())
+                visible: !isPlayback || root.status === "playing" || root.status === "paused"
+                color: isSeek && !enabled ? "transparent" : (root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434")
+                enabled: !controlProc.running && (isPlayback || isSeek ? root.actionAvailable(actionId) : root.remoteAvailable())
 
                 Text {
                   anchors.centerIn: parent
-                  text: remoteKey.actionId === "rewind" ? "󰓕" :
+                  text: remoteKey.actionId === "previous" ? "󰒮" :
+                        remoteKey.actionId === "play-pause" ? (root.status === "playing" ? "󰏤" : "󰐊") :
+                        remoteKey.actionId === "next" ? "󰒭" :
+                        remoteKey.actionId === "rewind" ? "󰓕" :
                         remoteKey.actionId === "fast-forward" ? "󰓖" :
                         remoteKey.actionId === "up" ? "󰁝" :
                         remoteKey.actionId === "down" ? "󰁅" :

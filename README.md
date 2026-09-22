@@ -7,9 +7,11 @@ shows a compact TV icon; clicking it opens a panel with the app icon, title,
 playback and connection states, elapsed time, controls, and a refresh action.
 It refreshes every 15 seconds and shows when the last check succeeded.
 
-The compact panel puts a directional remote beside the installed app shortcuts.
-Its grid includes Select, Back, and Home. Rewind and Forward occupy the upper
-corners when the active app advertises those media actions; their
+The compact panel puts a remote grid beside the installed app shortcuts.
+Previous, Play/Pause, and Next form its top row while media is active; the row
+disappears when no media is active. The grid also includes Select, Back, and
+Home. Rewind and Forward occupy the next row's corners when the active app
+advertises those media actions; their
 step size is decided by that app. Artist and album appear when the media
 session reports them. If the session exposes a usable HTTP or file artwork
 URI, the panel displays it in place of the app icon. Fire OS often exposes

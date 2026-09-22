@@ -232,6 +232,12 @@ BarWidget {
     open: root.popupOpen
     contentWidth: popup.fittedContentWidth(Style.space(360))
     contentHeight: popup.fittedContentHeight(details.implicitHeight)
+    borderSpec: {
+      var spec = Border.localOrSurfaceSpec("popups", "border", popup.borderColor,
+                                            Color.popups.border, Math.max(1, Style.space(2)))
+      spec.widths.bottom = Math.max(2, spec.widths.bottom)
+      return spec
+    }
 
     Column {
       id: details

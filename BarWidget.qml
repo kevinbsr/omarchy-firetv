@@ -15,7 +15,7 @@ BarWidget {
   property string title: ""
   property string artist: ""
   property string album: ""
-  property string artworkUri: ""
+  property string artworkFile: ""
   property int actions: 0
   property string lastCheckedText: ""
   property string lastConnectedText: ""
@@ -35,6 +35,8 @@ BarWidget {
   readonly property bool privacyMode: Boolean(root.setting("privacyMode", false))
   readonly property bool notificationsEnabled: Boolean(root.setting("notificationsEnabled", true))
   readonly property bool historyEnabled: Boolean(root.setting("historyEnabled", false))
+  readonly property var helperEnvironment: ({ "HOME": Quickshell.env("HOME"),
+                                             "PATH": "/usr/bin", "LANG": "C.UTF-8" })
 
   readonly property string appIconSource: appIconPath ? "file://" + appIconPath : ""
   readonly property bool connected: status !== "offline" && status !== "unauthorized" &&
@@ -78,6 +80,11 @@ BarWidget {
   }
   function close() { popupOpen = false }
 
+  Component.onDestruction: {
+    for (var process of [reader, appsProc, discoveryProc, pairProc, controlProc])
+      if (process.running) process.signal(15)
+  }
+
   function setPreference(key, value) {
     var entry = { id: root.moduleName }
     var base = root.settings && typeof root.settings === "object" ? root.settings : {}
@@ -93,6 +100,20 @@ BarWidget {
     var value = String(url || "")
     return value.indexOf("file://") === 0
       ? decodeURIComponent(value.substring(7)) : value
+  }
+
+  function parseHelper(raw) {
+    // Python emits at most 16 KiB; reject unexpected output before using it.
+    if (typeof raw !== "string" || raw.length > 16384) return null
+    try {
+      var value = JSON.parse(raw)
+      return value && typeof value === "object" ? value : null
+    } catch (error) { return null }
+  }
+
+  function safeText(value, limit) {
+    var result = String(value === undefined || value === null ? "" : value)
+    return result.length <= limit ? result : ""
   }
 
   function refresh() {
@@ -170,25 +191,32 @@ BarWidget {
 
   function update(raw) {
     try {
-      var result = JSON.parse(raw)
-      status = String(result.status || "unknown")
-      app = String(result.app || "")
-      packageName = String(result.package || "")
-      appIconPath = String(result.appIconPath || "")
-      title = String(result.title || "")
-      artist = String(result.artist || "")
-      album = String(result.album || "")
-      artworkUri = String(result.artworkUri || "")
+      var result = parseHelper(raw)
+      if (!result) throw new Error("Invalid helper response")
+      status = safeText(result.status || "unknown", 32)
+      app = safeText(result.app, 160)
+      packageName = safeText(result.package, 160)
+      var iconPath = safeText(result.appIconPath, 256)
+      appIconPath = /^\/usr\/share\/icons\/[A-Za-z0-9_./-]+\.(png|svg)$/.test(iconPath) &&
+                    iconPath.indexOf("..") < 0 ? iconPath : ""
+      title = safeText(result.title, 512)
+      artist = safeText(result.artist, 256)
+      album = safeText(result.album, 256)
+      var imageName = safeText(result.artworkFile, 28)
+      artworkFile = /^[0-9a-f]{24}\.png$/.test(imageName) ? imageName : ""
       actions = Number(result.actions || 0)
       latencyMs = Number(result.latencyMs === undefined ? -1 : result.latencyMs)
-      historyEntries = result.history || []
+      historyEntries = Array.isArray(result.history) ? result.history.slice(0, 10).map(function(item) {
+        return { at: safeText(item.at, 64), app: safeText(item.app, 160),
+                 title: safeText(item.title, 512) }
+      }) : []
       lastCheckedText = Qt.formatTime(new Date(), "HH:mm:ss")
       if (connected) lastConnectedText = lastCheckedText
       var mediaKey = (status === "playing" || status === "paused") && title
         ? packageName + "\n" + title : ""
       if (hasSeenSnapshot && mediaKey && mediaKey !== lastMediaKey &&
           notificationsEnabled && !privacyMode && ownsNotifications())
-        Quickshell.execDetached(["notify-send", "-a", "Fire TV", "-i",
+        Quickshell.execDetached(["/usr/bin/notify-send", "-a", "Fire TV", "-i",
                                  appIconPath || pathFromUrl(Qt.resolvedUrl("firetv-icon.svg")),
                                  "Now watching on " + app, title])
       lastMediaKey = mediaKey
@@ -201,7 +229,7 @@ BarWidget {
       title = ""
       artist = ""
       album = ""
-      artworkUri = ""
+      artworkFile = ""
       actions = 0
     }
   }
@@ -310,6 +338,7 @@ BarWidget {
         Text {
           width: parent.width
           text: root.setupMessage
+          textFormat: Text.PlainText
           visible: text !== ""
           wrapMode: Text.WordWrap
           color: root.bar ? root.bar.foreground : Color.foreground
@@ -401,7 +430,13 @@ BarWidget {
             width: parent.width - Style.space(12)
             height: width
             fillMode: Image.PreserveAspectFit
-            source: /^(https?:|file:)/.test(root.artworkUri) ? root.artworkUri : root.appIconSource
+            source: root.artworkFile
+              ? "file://" + Quickshell.env("HOME") + "/.cache/omarchy/firetv/artwork/" + root.artworkFile
+              : root.appIconSource
+            sourceSize.width: 256
+            sourceSize.height: 256
+            cache: false
+            asynchronous: true
             visible: status === Image.Ready
           }
 
@@ -409,6 +444,7 @@ BarWidget {
             anchors.centerIn: parent
             visible: !appLogo.visible
             text: root.app ? root.app.substring(0, 2).toUpperCase() : "󰟴"
+            textFormat: Text.PlainText
             color: root.bar ? root.bar.foreground : Color.foreground
             font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
             font.pixelSize: Style.font.subtitle
@@ -424,6 +460,7 @@ BarWidget {
           Text {
             width: parent.width
             text: root.app || "Fire TV"
+            textFormat: Text.PlainText
             color: root.bar ? root.bar.foreground : Color.foreground
             font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
             font.pixelSize: Style.font.subtitle
@@ -446,6 +483,7 @@ BarWidget {
       Text {
         width: parent.width
         text: root.title || (root.status === "app" ? "No title reported by this app" : root.displayText)
+        textFormat: Text.PlainText
         color: root.bar ? root.bar.foreground : Color.foreground
         opacity: root.title ? 1 : 0.65
         font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
@@ -459,6 +497,7 @@ BarWidget {
         width: parent.width
         visible: root.artist !== "" || root.album !== ""
         text: root.artist + (root.artist && root.album ? " · " : "") + root.album
+        textFormat: Text.PlainText
         color: root.bar ? root.bar.foreground : Color.foreground
         opacity: 0.65
         font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
@@ -573,6 +612,7 @@ BarWidget {
                   anchors.leftMargin: Style.space(6)
                   anchors.rightMargin: Style.space(6)
                   text: appShortcut.appName
+                  textFormat: Text.PlainText
                   horizontalAlignment: Text.AlignHCenter
                   verticalAlignment: Text.AlignVCenter
                   elide: Text.ElideRight
@@ -695,6 +735,7 @@ BarWidget {
             width: parent.width
             text: Qt.formatDateTime(new Date(modelData.at), "MMM d HH:mm") +
                   " · " + modelData.app + " · " + modelData.title
+            textFormat: Text.PlainText
             color: root.bar ? root.bar.foreground : Color.foreground
             opacity: 0.7
             font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
@@ -743,6 +784,7 @@ BarWidget {
         width: parent.width
         visible: root.controlError !== ""
         text: root.controlError
+        textFormat: Text.PlainText
         color: "#ef7777"
         font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
         font.pixelSize: Style.font.caption
@@ -826,44 +868,64 @@ BarWidget {
 
   Process {
     id: reader
-    command: ["python3", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
+    command: ["/usr/bin/timeout", "-s", "TERM", "-k", "2s", "40s",
+              "/usr/bin/python3", "-I", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
               String(root.setting("host", "")), "--history",
               root.historyEnabled ? "on" : "off"]
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: root.update(text)
     }
+    onStarted: readerWatchdog.restart()
     onExited: function(exitCode) {
+      readerWatchdog.stop()
       if (exitCode !== 0) root.status = "offline"
     }
   }
 
   Process {
     id: appsProc
-    command: ["python3", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
+    command: ["/usr/bin/timeout", "-s", "TERM", "-k", "2s", "15s",
+              "/usr/bin/python3", "-I", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
               String(root.setting("host", "")), "--apps"]
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
-          var result = JSON.parse(text)
-          root.installedApps = result.ok ? result.apps : []
+          var result = root.parseHelper(text)
+          root.installedApps = result && result.ok && Array.isArray(result.apps)
+            ? result.apps.slice(0, 32).map(function(item) {
+                return { package: root.safeText(item.package, 160),
+                         name: root.safeText(item.name, 160) }
+              }).filter(function(item) { return /^[A-Za-z0-9_.]+$/.test(item.package) }) : []
         } catch (error) {
           root.installedApps = []
         }
       }
     }
+    onStarted: appsWatchdog.restart()
+    onExited: appsWatchdog.stop()
   }
 
   Process {
     id: discoveryProc
-    command: ["python3", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")), "--discover"]
+    command: ["/usr/bin/timeout", "-s", "TERM", "-k", "2s", "15s",
+              "/usr/bin/python3", "-I", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")), "--discover"]
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
-          var result = JSON.parse(text)
-          root.discoveredHosts = result.hosts || []
+          var result = root.parseHelper(text)
+          if (!result || !Array.isArray(result.hosts)) throw new Error("Invalid discovery")
+          root.discoveredHosts = result.hosts.slice(0, 512).map(function(host) {
+            return root.safeText(host, 15)
+          }).filter(function(host) { return /^[0-9.]+$/.test(host) })
           root.setupMessage = root.discoveredHosts.length
             ? root.discoveredHosts.length + " possible Fire TV device(s) found"
             : "No ADB device found. Check ADB Debugging, or enter the TV's IP below."
@@ -873,52 +935,72 @@ BarWidget {
         }
       }
     }
+    onStarted: discoveryWatchdog.restart()
+    onExited: discoveryWatchdog.stop()
   }
 
   Process {
     id: pairProc
-    command: ["python3", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
+    command: ["/usr/bin/timeout", "-s", "TERM", "-k", "2s", "30s",
+              "/usr/bin/python3", "-I", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
               "--pair", root.pendingHost]
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
-          var result = JSON.parse(text)
+          var result = root.parseHelper(text)
+          if (!result) throw new Error("Invalid connection response")
           if (result.ok) {
-            root.setupMessage = "Connected to Fire TV " + result.model
-            root.setPreference("host", result.host)
+            root.setupMessage = "Connected to Fire TV " + root.safeText(result.model, 80)
+            root.setPreference("host", root.safeText(result.host, 64))
             root.status = "checking"
             root.refresh()
             root.refreshApps()
-          } else root.setupMessage = String(result.error || "Could not connect")
+          } else root.setupMessage = root.safeText(result.error || "Could not connect", 160)
         } catch (error) {
           root.setupMessage = "Could not connect. Try again."
         }
       }
     }
+    onStarted: pairWatchdog.restart()
+    onExited: pairWatchdog.stop()
   }
 
   Process {
     id: controlProc
-    command: ["python3", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
+    command: ["/usr/bin/timeout", "-s", "TERM", "-k", "2s", "40s",
+              "/usr/bin/python3", "-I", root.pathFromUrl(Qt.resolvedUrl("firetv_status.py")),
               String(root.setting("host", "")),
               root.pendingMode, root.pendingAction]
+    clearEnvironment: true
+    environment: root.helperEnvironment
     stdout: StdioCollector {
       waitForEnd: true
       onStreamFinished: {
         try {
-          var result = JSON.parse(text)
-          root.controlError = result.ok ? "" : String(result.error || "Control failed")
+          var result = root.parseHelper(text)
+          root.controlError = result && result.ok ? "" :
+            root.safeText(result && result.error || "Control failed", 160)
         } catch (error) {
           root.controlError = "Control failed"
         }
         refreshSoon.restart()
       }
     }
+    onStarted: controlWatchdog.restart()
     onExited: function(exitCode) {
+      controlWatchdog.stop()
       if (exitCode !== 0) root.controlError = "Control failed"
     }
   }
+
+  Timer { id: readerWatchdog; interval: 45000; onTriggered: if (reader.running) reader.signal(9) }
+  Timer { id: appsWatchdog; interval: 20000; onTriggered: if (appsProc.running) appsProc.signal(9) }
+  Timer { id: discoveryWatchdog; interval: 20000; onTriggered: if (discoveryProc.running) discoveryProc.signal(9) }
+  Timer { id: pairWatchdog; interval: 35000; onTriggered: if (pairProc.running) pairProc.signal(9) }
+  Timer { id: controlWatchdog; interval: 45000; onTriggered: if (controlProc.running) controlProc.signal(9) }
 
   Timer {
     id: refreshSoon

@@ -15,7 +15,7 @@ The widget talks to the stick over Android Debug Bridge (ADB). It does not requi
 ## Requirements
 
 - Omarchy with the Quattro plugin system.
-- Python 3, `adb` from `android-tools`, and `ip` from `iproute2` for local discovery. `notify-send` from `libnotify` is needed only for desktop alerts.
+- Python 3, `adb` from `android-tools`, `ip` from `iproute2` for local discovery, and `timeout` from `coreutils`. `notify-send` from `libnotify` is needed only for desktop alerts. ImageMagick's `magick` is optional for artwork; without it the widget uses the app icon.
 - An Amazon Fire TV with **ADB Debugging** enabled and reachable from this computer on TCP port 5555. The TV must authorize this computer's ADB connection.
 
 On Omarchy, install ADB if needed:
@@ -48,7 +48,7 @@ On the TV, enable **Settings → My Fire TV → Developer Options → ADB Debugg
 - **Timeline** is off by default. When enabled, it records title changes locally in `~/.local/state/omarchy/firetv/history.json` (up to 100 entries, owner-only file permissions). Turning it off stops new entries; **Clear history** deletes the saved entries. The plugin reads only activity on the Fire TV Stick, not other TV inputs.
 - **Refresh** checks again immediately. **Reconnect** restarts this computer's ADB connection to the TV.
 
-The TV address, refresh interval (10–120 seconds), and feature defaults can be changed in Omarchy's widget settings. App logos come from locally installed desktop icons when available; otherwise the panel shows a two-letter badge and notifications use the bundled TV icon. Artwork appears only when the media session provides a usable HTTP or file URI.
+The TV address, refresh interval (10–120 seconds), and feature defaults can be changed in Omarchy's widget settings. App logos come from locally installed desktop icons when available; otherwise the panel shows a two-letter badge and notifications use the bundled TV icon. Artwork is optional: only HTTPS URLs resolving to public addresses are fetched, with a 1 MiB download limit and a six-second deadline. ImageMagick decodes them under resource limits into small local PNGs in `~/.cache/omarchy/firetv/artwork/`. Local URLs, redirects, oversized images, and failed decodes fall back to the app icon.
 
 ## Optional access over Tailscale
 
@@ -64,6 +64,7 @@ If you enabled Timeline, remove its local data separately if you no longer want 
 
 ```sh
 rm -rf ~/.local/state/omarchy/firetv
+rm -rf ~/.cache/omarchy/firetv
 ```
 
 You can also revoke the computer's debugging authorization under the TV's Developer Options.
@@ -76,6 +77,7 @@ Validate the repository before submitting changes:
 omarchy plugin validate .
 qmllint -I "$OMARCHY_PATH/shell" BarWidget.qml
 python3 -m py_compile firetv_status.py
+python3 -m unittest discover -s tests
 ```
 
-The plugin consists of `BarWidget.qml`, `firetv_status.py`, and `firetv-icon.svg`. It executes `python3`, `adb`, `ip`, and optionally `notify-send`; it does not download or execute remote code. Licensed under [MIT](LICENSE).
+The plugin consists of `BarWidget.qml`, `firetv_status.py`, and `firetv-icon.svg`. It uses fixed system paths for Python, ADB, IP, timeout, and optional ImageMagick and notification tools. The helper runs with a cleared environment and bounded child output. It never downloads or executes remote code. Licensed under [MIT](LICENSE).

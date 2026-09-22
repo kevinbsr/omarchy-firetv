@@ -601,6 +601,7 @@ BarWidget {
           }
 
           Flow {
+            id: appsGrid
             width: parent.width
             spacing: Style.space(4)
             Repeater {
@@ -609,16 +610,25 @@ BarWidget {
                 id: appShortcut
                 readonly property string appPackage: modelData.package
                 readonly property string appName: modelData.name
-                width: appLabel.implicitWidth + Style.space(12)
-                height: Style.space(26)
+                readonly property bool isCurrentApp: root.connected && appPackage === root.packageName
+                width: index === root.installedApps.length - 1 && root.installedApps.length % 2 === 1
+                  ? appsGrid.width : Math.floor((appsGrid.width - appsGrid.spacing) / 2)
+                height: Style.space(30)
                 radius: Style.space(7)
                 color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
+                border.width: isCurrentApp ? 2 : 0
+                border.color: Color.accent
                 enabled: root.connected && !controlProc.running
                 opacity: enabled ? 1 : 0.4
                 Text {
                   id: appLabel
-                  anchors.centerIn: parent
+                  anchors.fill: parent
+                  anchors.leftMargin: Style.space(6)
+                  anchors.rightMargin: Style.space(6)
                   text: appShortcut.appName
+                  horizontalAlignment: Text.AlignHCenter
+                  verticalAlignment: Text.AlignVCenter
+                  elide: Text.ElideRight
                   color: root.bar ? root.bar.foreground : Color.foreground
                   font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
                   font.pixelSize: Style.font.caption

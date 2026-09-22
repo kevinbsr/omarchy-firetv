@@ -25,9 +25,10 @@ the title remains visible when the panel is open. Both switches persist in
 Omarchy shell settings. Alerts do not fire for the first title seen when the
 shell starts, so restarting the shell does not produce an old alert.
 
-Installed streaming apps appear as shortcuts in the panel. Selecting one
-opens it on the stick, which can interrupt current playback. The text field
-sends basic Latin letters, digits, spaces, and common punctuation to the
+Installed streaming apps appear in a two-column grid beside the remote. The
+current app has an accent outline, and a lone final shortcut fills its row.
+Selecting an app opens it on the stick, which can interrupt current playback.
+The text field sends basic Latin letters, digits, spaces, and common punctuation to the
 currently focused TV text field (up to 100 characters). Focus a search box on
 the TV first; the widget does not choose a field automatically.
 

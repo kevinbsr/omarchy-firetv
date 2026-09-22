@@ -355,7 +355,7 @@ def control(serial, requested):
         "previous": (ACTION_PREVIOUS, "previous"),
         "next": (ACTION_NEXT, "next"),
         "rewind": (ACTION_REWIND, "rewind"),
-        "fast-forward": (ACTION_FAST_FORWARD, "fast-forword"),
+        "fast-forward": (ACTION_FAST_FORWARD, "fast-forward"),
     }
     if requested == "play-pause":
         if status == "playing":
@@ -407,6 +407,9 @@ def type_text(serial, value):
 
 
 def main():
+    if len(sys.argv) == 1:
+        print(json.dumps({"ok": False, "error": "Usage: firetv_status.py HOST [COMMAND]"}))
+        return
     if len(sys.argv) == 2 and sys.argv[1] == "--discover":
         print(json.dumps(discover(), ensure_ascii=False))
         return

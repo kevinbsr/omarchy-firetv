@@ -1,88 +1,73 @@
-# Fire TV Now Playing
+# Fire TV Now Playing for Omarchy
 
-This Omarchy bar widget reads the foreground app and active Android media
-session from a Fire TV Stick using ADB. It shows the
-current title when the app provides one, or the app name otherwise. The bar
-shows a compact TV icon; clicking it opens a panel with the app icon, title,
-playback and connection states, controls, and a refresh action.
-It refreshes every 15 seconds and shows when the last check succeeded.
+A compact [Omarchy](https://omarchy.org/) bar widget for an Amazon Fire TV Stick. Click the TV icon to see the foreground app and, when the app exposes it through Android's media session, the current title, artist, album, playback state, and artwork. The panel also has a remote, playback controls, shortcuts for supported apps installed on **your** Fire TV, and text entry for a focused TV search field.
 
-The compact panel puts a remote grid beside the installed app shortcuts.
-Previous, Play/Pause, and Next form its top row while media is active; the row
-disappears when no media is active. The grid also includes Select, Back, and
-Home. Rewind and Forward occupy the next row's corners when the active app
-advertises those media actions; their
-step size is decided by that app. Artist and album appear when the media
-session reports them. If the session exposes a usable HTTP or file artwork
-URI, the panel displays it in place of the app icon. Title-change alerts use
-the installed desktop logo for YouTube, Netflix, Spotify, Plex, or Jellyfin
-when available; other apps use the plugin's bundled TV icon. Fire OS often exposes
-only a title through ADB, so the app icon remains the normal fallback.
-On this stick, Prime Video reports the placeholder title `PrimeVideo` during
-playback; the widget shows the app name until Prime exposes a real title.
+The widget talks to the stick over Android Debug Bridge (ADB). It does not require an account or a companion app on the TV for local network use. Fire OS and each streaming app decide which playback details are available: some show only the app name, and Prime Video may expose a placeholder instead of the actual title.
 
-Title-change desktop alerts are on by default and can be muted in the panel.
-The Private toggle hides titles from the bar tooltip and suppresses alerts;
-the title remains visible when the panel is open. Both switches persist in
-Omarchy shell settings. Alerts do not fire for the first title seen when the
-shell starts, so restarting the shell does not produce an old alert. On a
-multi-monitor desktop, one bar widget instance sends alerts for all monitors.
+## Requirements
 
-Installed streaming apps appear in a two-column grid beside the remote. The
-current app has an accent outline, and a lone final shortcut fills its row.
-Selecting an app opens it on the stick, which can interrupt current playback.
-The text field sends basic Latin letters, digits, spaces, and common punctuation to the
-currently focused TV text field (up to 100 characters). Focus a search box on
-the TV first; the widget does not choose a field automatically.
+- Omarchy with the Quattro plugin system.
+- Python 3, `adb` from `android-tools`, and `ip` from `iproute2` for local discovery. `notify-send` from `libnotify` is needed only for desktop alerts.
+- An Amazon Fire TV with **ADB Debugging** enabled and reachable from this computer on TCP port 5555. The TV must authorize this computer's ADB connection.
 
-The footer shows the latest ADB check time and full check duration. Reconnect
-restarts this computer's ADB connection to the stick. The optional Timeline
-records title changes only after it is enabled. It stores up to 100 entries
-in `~/.local/state/omarchy/firetv/history.json` with owner-only file
-permissions. The panel shows the latest five and has a Clear history action.
-Turning Timeline off stops new entries but retains the existing file until
-Clear history is used.
-
-The control buttons send previous, play/pause, or next only when the active
-app's media session advertises that action.
-
-## Install and connect
-
-After this folder is published as a Git repository, install it on Omarchy with:
+On Omarchy, install ADB if needed:
 
 ```sh
-omarchy plugin add <git-repository-url> --enable
+omarchy pkg add android-tools
 ```
 
-Click the TV icon in the bar. The first-run panel scans the local network for
-devices listening on the Fire TV ADB port, then tries to connect to the single
-device it finds. If it finds several, select the right address. You can always
-enter the TV's IP manually. On the TV, turn on **Settings → My Fire TV →
-Developer options → ADB Debugging** and accept **Allow USB debugging** for this
-computer. If Developer options is hidden, select the device name under
-**My Fire TV → About** seven times. For LAN setup, the computer and stick must
-be on the same network. The plugin saves the authorized IP in Omarchy's shell settings; use
-**Change Fire TV** in the panel if it moves to another address.
+ADB access gives the connected computer control of the TV. Enable it only on a network you trust, and revoke the computer's authorization on the TV if you no longer use this plugin. The plugin runs with your normal user permissions and does not install a background service.
 
-For remote access, install Tailscale from the Amazon Appstore where it is
-available. If the store does not offer it for the stick, download the official
-stable universal Android APK from `https://pkgs.tailscale.com/stable/` and
-sideload it with `adb install -r <downloaded-apk>`. The APK requires Android 8
-or newer and does not update automatically. Approve the VPN prompt on the TV,
-then scan its login QR code with a phone. The computer must be in the same
-tailnet. Enter the stick's `100.x.y.z` Tailscale IP manually in the plugin;
-local discovery does not scan the tailnet. The connection still uses ADB
-debugging on port 5555 and may require a fresh authorization prompt on the TV.
-Test `adb connect <tailscale-ip>:5555` before switching the plugin.
+## Install
 
-Omarchy needs `adb` from `android-tools`. If it is not already installed, run
-`omarchy pkg add android-tools` in a terminal. For LAN use, no additional
-service, account, or app on the stick is needed. Scanning checks at most 512 local addresses and
-only looks for port 5555; it does not connect to candidate devices until you
-select one (or exactly one device is found). ADB authorization remains a
-required action on the TV. The refresh interval is configurable in Omarchy's
-shell settings.
+Once the repository is public:
 
-The widget records a viewing timeline only when you enable it. It can only see activity on the
-Fire TV Stick, not other TV inputs. App logos use locally installed icons when
-available; other apps show a two-letter badge.
+```sh
+omarchy plugin add https://github.com/kevinbsr/omarchy-firetv.git --enable
+```
+
+Click the TV icon in the bar to set up the connection. The first-run panel scans at most 512 addresses on directly connected private IPv4 networks for port 5555. If it finds one candidate, it tries to connect; if it finds several, choose the Fire TV. You can also enter its IPv4 address manually. Discovery does not connect to every candidate.
+
+On the TV, enable **Settings → My Fire TV → Developer Options → ADB Debugging**. If Developer Options is hidden, press the device name under **My Fire TV → About** seven times. Accept the TV's debugging authorization prompt when the plugin connects. The computer and TV should be on the same local network. Use **Change Fire TV** in the panel if its IP address changes.
+
+## Use and configure
+
+- The bar shows a small TV icon. Click it to open or close the panel; Escape closes it. The widget checks the TV every 15 seconds by default.
+- The remote has directional keys, Select, Back, and Home. Previous, Play/Pause, Next, Rewind, and Fast Forward appear when relevant; the media app determines which actions work and how far seeking moves.
+- App shortcuts list supported apps actually installed on the connected TV. Selecting one opens it and may interrupt playback. Unsupported apps can still appear as the foreground app, but do not get a shortcut.
+- **Type on TV** sends up to 100 basic Latin characters to the TV's currently focused text field. Focus a search field on the TV first.
+- **Alerts** notify you when the visible title changes. The first title seen after shell startup does not trigger an alert. **Private** hides titles in bar tooltips and alerts; an open panel still shows them.
+- **Timeline** is off by default. When enabled, it records title changes locally in `~/.local/state/omarchy/firetv/history.json` (up to 100 entries, owner-only file permissions). Turning it off stops new entries; **Clear history** deletes the saved entries. The plugin reads only activity on the Fire TV Stick, not other TV inputs.
+- **Refresh** checks again immediately. **Reconnect** restarts this computer's ADB connection to the TV.
+
+The TV address, refresh interval (10–120 seconds), and feature defaults can be changed in Omarchy's widget settings. App logos come from locally installed desktop icons when available; otherwise the panel shows a two-letter badge and notifications use the bundled TV icon. Artwork appears only when the media session provides a usable HTTP or file URI.
+
+## Optional access over Tailscale
+
+If the Fire TV supports Tailscale, install its official Android app on the TV, sign it into the same tailnet as this computer, and enter the TV's `100.x.y.z` address manually. Some Fire TV models do not offer Tailscale in the Amazon Appstore; in that case, sideloading the official APK may be possible. Local discovery does not scan the tailnet. ADB Debugging and TV authorization are still required, and the plugin still connects to port 5555. Tailscale is optional for ordinary local network use.
+
+## Remove
+
+```sh
+omarchy plugin remove kevin.firetv
+```
+
+If you enabled Timeline, remove its local data separately if you no longer want it:
+
+```sh
+rm -rf ~/.local/state/omarchy/firetv
+```
+
+You can also revoke the computer's debugging authorization under the TV's Developer Options.
+
+## Development
+
+Validate the repository before submitting changes:
+
+```sh
+omarchy plugin validate .
+qmllint -I "$OMARCHY_PATH/shell" BarWidget.qml
+python3 -m py_compile firetv_status.py
+```
+
+The plugin consists of `BarWidget.qml`, `firetv_status.py`, and `firetv-icon.svg`. It executes `python3`, `adb`, `ip`, and optionally `notify-send`; it does not download or execute remote code. Licensed under [MIT](LICENSE).

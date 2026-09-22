@@ -60,13 +60,20 @@ device it finds. If it finds several, select the right address. You can always
 enter the TV's IP manually. On the TV, turn on **Settings → My Fire TV →
 Developer options → ADB Debugging** and accept **Allow USB debugging** for this
 computer. If Developer options is hidden, select the device name under
-**My Fire TV → About** seven times. The computer and stick must be on the same
-network. The plugin saves the authorized IP in Omarchy's shell settings; use
+**My Fire TV → About** seven times. For LAN setup, the computer and stick must
+be on the same network. The plugin saves the authorized IP in Omarchy's shell settings; use
 **Change Fire TV** in the panel if it moves to another address.
 
+For remote access, install Tailscale on the stick from the Amazon Appstore,
+approve its VPN prompt, and scan its login QR code with a phone. The computer
+must be in the same tailnet. Enter the stick's `100.x.y.z` Tailscale IP manually
+in the plugin; local discovery does not scan the tailnet. The connection still
+uses ADB debugging on port 5555 and may require a fresh authorization prompt
+on the TV. Test `adb connect <tailscale-ip>:5555` before switching the plugin.
+
 Omarchy needs `adb` from `android-tools`. If it is not already installed, run
-`omarchy pkg add android-tools` in a terminal. No additional service, account,
-or app on the stick is needed. Scanning checks at most 512 local addresses and
+`omarchy pkg add android-tools` in a terminal. For LAN use, no additional
+service, account, or app on the stick is needed. Scanning checks at most 512 local addresses and
 only looks for port 5555; it does not connect to candidate devices until you
 select one (or exactly one device is found). ADB authorization remains a
 required action on the TV. The refresh interval is configurable in Omarchy's

@@ -77,7 +77,9 @@ def adb(serial, *args, timeout=8):
 def valid_host(value):
     try:
         address = ipaddress.ip_address(value)
-        return address.version == 4 and address.is_private and not address.is_loopback
+        tailscale_range = ipaddress.ip_network("100.64.0.0/10")
+        return (address.version == 4 and not address.is_loopback
+                and (address.is_private or address in tailscale_range))
     except ValueError:
         return False
 
@@ -124,7 +126,7 @@ def discover():
 
 def pair(host):
     if not valid_host(host):
-        return {"ok": False, "status": "invalid-host", "error": "Enter a local IPv4 address"}
+        return {"ok": False, "status": "invalid-host", "error": "Enter a LAN or Tailscale IPv4 address"}
     serial = host + ":5555"
     try:
         attempt = subprocess.run(["adb", "connect", serial], capture_output=True,

@@ -312,7 +312,7 @@ BarWidget {
           font.pixelSize: Style.font.caption
         }
         Text {
-          text: "Or enter the TV's IP address"
+          text: "Or enter its LAN or Tailscale IP"
           color: root.bar ? root.bar.foreground : Color.foreground
           font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
           font.pixelSize: Style.font.caption
@@ -340,7 +340,7 @@ BarWidget {
             Text {
               anchors.fill: tvIpInput
               verticalAlignment: Text.AlignVCenter
-              text: "192.168.x.x"
+              text: "192.168.x.x or 100.x.y.z"
               visible: tvIpInput.text === "" && !tvIpInput.activeFocus
               color: root.bar ? root.bar.foreground : Color.foreground
               opacity: 0.45

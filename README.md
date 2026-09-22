@@ -23,7 +23,8 @@ Title-change desktop alerts are on by default and can be muted in the panel.
 The Private toggle hides titles from the bar tooltip and suppresses alerts;
 the title remains visible when the panel is open. Both switches persist in
 Omarchy shell settings. Alerts do not fire for the first title seen when the
-shell starts, so restarting the shell does not produce an old alert.
+shell starts, so restarting the shell does not produce an old alert. On a
+multi-monitor desktop, one bar widget instance sends alerts for all monitors.
 
 Installed streaming apps appear in a two-column grid beside the remote. The
 current app has an accent outline, and a lone final shortcut fills its row.

@@ -170,6 +170,12 @@ BarWidget {
     controlProc.running = true
   }
 
+  function ownsNotifications() {
+    if (!bar || typeof bar.moduleWidgets !== "function") return true
+    var instances = bar.moduleWidgets(moduleName)
+    return instances.length > 0 && instances[0] === root
+  }
+
   function update(raw) {
     try {
       var result = JSON.parse(raw)
@@ -188,7 +194,7 @@ BarWidget {
       var mediaKey = (status === "playing" || status === "paused") && title
         ? packageName + "\n" + title : ""
       if (hasSeenSnapshot && mediaKey && mediaKey !== lastMediaKey &&
-          notificationsEnabled && !privacyMode)
+          notificationsEnabled && !privacyMode && ownsNotifications())
         Quickshell.execDetached(["notify-send", "-a", "Fire TV", "-i", "video-display",
                                  "Now watching on " + app, title])
       lastMediaKey = mediaKey

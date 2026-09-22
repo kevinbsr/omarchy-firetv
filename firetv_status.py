@@ -30,11 +30,12 @@ APP_NAMES = {
     "org.jellyfin.androidtv": "Jellyfin",
     "com.globo.globotv": "Globoplay",
     "tv.pluto.android": "Pluto TV",
+    "com.tailscale.ipn": "Tailscale",
     "com.amazon.tv.launcher": "Fire TV Home",
 }
 
 SHORTCUT_PACKAGES = tuple(package for package in APP_NAMES
-                          if package != "com.amazon.tv.launcher")
+                          if package not in ("com.amazon.tv.launcher", "com.tailscale.ipn"))
 APP_ICON_PATHS = {
     "com.amazon.firetv.youtube": "/usr/share/icons/Papirus/64x64/apps/youtube.svg",
     "com.google.android.youtube.tv": "/usr/share/icons/Papirus/64x64/apps/youtube.svg",

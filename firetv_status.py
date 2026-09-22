@@ -218,8 +218,7 @@ def sessions(text):
                 found.append(current)
             current = {"package": header.group(1), "active": False,
                        "state": 0, "title": "", "artist": "", "album": "",
-                       "artworkUri": "", "actions": 0,
-                       "positionMs": -1, "durationMs": -1}
+                       "artworkUri": "", "actions": 0}
             continue
         if not current:
             continue
@@ -234,11 +233,9 @@ def sessions(text):
             match = re.search(r"\bstate=(\d+)", stripped)
             if match:
                 current["state"] = int(match.group(1))
-            for field, output in (("position", "positionMs"),
-                                  ("actions", "actions")):
-                match = re.search(r"\b" + field + r"=(-?\d+)", stripped)
-                if match:
-                    current[output] = int(match.group(1))
+            match = re.search(r"\bactions=(-?\d+)", stripped)
+            if match:
+                current["actions"] = int(match.group(1))
         elif stripped.startswith("metadata:"):
             match = re.search(r"\bdescription=(.*)$", stripped)
             if match:
@@ -249,9 +246,6 @@ def sessions(text):
                 if len(parts) == 3:
                     current["artist"] = "" if parts[1].lower() == "null" else parts[1]
                     current["album"] = "" if parts[2].lower() == "null" else parts[2]
-            match = re.search(r"\bduration(?:Ms)?=(-?\d+)", stripped)
-            if match:
-                current["durationMs"] = int(match.group(1))
             match = re.search(r"\b(?:artUri|artworkUri)=([^,\s]+)", stripped)
             if match and match.group(1).lower() != "null":
                 current["artworkUri"] = match.group(1)
@@ -311,8 +305,6 @@ def snapshot(serial):
         "album": selected["album"] if selected else "",
         "artworkUri": selected["artworkUri"] if selected else "",
         "actions": selected["actions"] if selected else 0,
-        "positionMs": selected["positionMs"] if selected else -1,
-        "durationMs": selected["durationMs"] if selected else -1,
     }
 
 

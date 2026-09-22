@@ -16,10 +16,6 @@ BarWidget {
   property string album: ""
   property string artworkUri: ""
   property int actions: 0
-  property double positionMs: -1
-  property double durationMs: -1
-  property double lastSnapshotAtMs: 0
-  property double clockTickMs: 0
   property string lastCheckedText: ""
   property string lastConnectedText: ""
   property string pendingAction: ""
@@ -52,15 +48,6 @@ BarWidget {
   readonly property bool connected: status !== "offline" && status !== "unauthorized" &&
                                     status !== "not-configured" &&
                                     status !== "checking" && status !== "unknown"
-  readonly property bool hasPosition: positionMs >= 0
-  readonly property bool hasProgress: durationMs > 0 && positionMs >= 0
-  readonly property double positionNowMs: {
-    var elapsed = status === "playing" ? Math.max(0, clockTickMs - lastSnapshotAtMs) : 0
-    if (!hasPosition) return -1
-    return hasProgress ? Math.min(durationMs, positionMs + elapsed) : positionMs + elapsed
-  }
-  readonly property double progressFraction: hasProgress ? Math.max(0, Math.min(1, positionNowMs / durationMs)) : 0
-
   readonly property string displayText: {
     if (status === "playing" || status === "paused")
       return app + (title ? " · " + title : "")
@@ -138,13 +125,6 @@ BarWidget {
     pairProc.running = true
   }
 
-  function formatTime(ms) {
-    var seconds = Math.max(0, Math.floor(ms / 1000))
-    var minutes = Math.floor(seconds / 60)
-    var remainder = seconds % 60
-    return minutes + ":" + (remainder < 10 ? "0" : "") + remainder
-  }
-
   function actionAvailable(action) {
     if (!connected || (status !== "playing" && status !== "paused")) return false
     if (action === "previous") return (actions & 16) !== 0
@@ -201,12 +181,8 @@ BarWidget {
       album = String(result.album || "")
       artworkUri = String(result.artworkUri || "")
       actions = Number(result.actions || 0)
-      positionMs = Number(result.positionMs === undefined ? -1 : result.positionMs)
-      durationMs = Number(result.durationMs === undefined ? -1 : result.durationMs)
       latencyMs = Number(result.latencyMs === undefined ? -1 : result.latencyMs)
       historyEntries = result.history || []
-      lastSnapshotAtMs = Date.now()
-      clockTickMs = lastSnapshotAtMs
       lastCheckedText = Qt.formatTime(new Date(), "HH:mm:ss")
       if (connected) lastConnectedText = lastCheckedText
       var mediaKey = (status === "playing" || status === "paused") && title
@@ -226,8 +202,6 @@ BarWidget {
       album = ""
       artworkUri = ""
       actions = 0
-      positionMs = -1
-      durationMs = -1
     }
   }
 
@@ -483,40 +457,6 @@ BarWidget {
         font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
         font.pixelSize: Style.font.caption
         elide: Text.ElideRight
-      }
-
-      Column {
-        width: parent.width
-        spacing: Style.space(5)
-        visible: root.status === "playing" || root.status === "paused"
-
-        Rectangle {
-          width: parent.width
-          height: Style.space(5)
-          radius: height / 2
-          color: root.bar ? Qt.darker(root.bar.foreground, 2.5) : "#444444"
-          visible: root.hasProgress
-
-          Rectangle {
-            width: parent.width * root.progressFraction
-            height: parent.height
-            radius: parent.radius
-            color: Color.accent
-          }
-        }
-
-        Text {
-          width: parent.width
-          text: root.hasProgress
-            ? root.formatTime(root.positionNowMs) + " / " + root.formatTime(root.durationMs)
-            : root.hasPosition
-              ? "Elapsed " + root.formatTime(root.positionNowMs) + " · total time unavailable"
-              : "Progress unavailable from this app"
-          color: root.bar ? root.bar.foreground : Color.foreground
-          opacity: 0.65
-          font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-          font.pixelSize: Style.font.caption
-        }
       }
 
       Row {
@@ -978,13 +918,6 @@ BarWidget {
     interval: 700
     repeat: false
     onTriggered: root.refresh()
-  }
-
-  Timer {
-    interval: 1000
-    running: root.popupOpen && root.hasPosition && root.status === "playing"
-    repeat: true
-    onTriggered: root.clockTickMs = Date.now()
   }
 
   Timer {

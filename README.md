@@ -4,7 +4,7 @@ This Omarchy bar widget reads the foreground app and active Android media
 session from a Fire TV Stick using ADB. It shows the
 current title when the app provides one, or the app name otherwise. The bar
 shows a compact TV icon; clicking it opens a panel with the app icon, title,
-playback and connection states, elapsed time, controls, and a refresh action.
+playback and connection states, controls, and a refresh action.
 It refreshes every 15 seconds and shows when the last check succeeded.
 
 The compact panel puts a remote grid beside the installed app shortcuts.
@@ -41,10 +41,7 @@ Turning Timeline off stops new entries but retains the existing file until
 Clear history is used.
 
 The control buttons send previous, play/pause, or next only when the active
-app's media session advertises that action. A progress bar and total time
-appear only if the app exposes a duration. The current YouTube session exposes
-elapsed position but does not expose duration through ADB's text output, so
-the panel shows elapsed time without a progress bar there.
+app's media session advertises that action.
 
 ## Install and connect
 

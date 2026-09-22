@@ -4,6 +4,8 @@ A compact [Omarchy](https://omarchy.org/) bar widget for an Amazon Fire TV Stick
 
 The widget talks to the stick over Android Debug Bridge (ADB). It does not require an account or a companion app on the TV for local network use. Fire OS and each streaming app decide which playback details are available: some show only the app name, and Prime Video may expose a placeholder instead of the actual title.
 
+![Fire TV Now Playing panel showing the remote and installed app shortcuts](preview.png)
+
 ## Requirements
 
 - Omarchy with the Quattro plugin system.
@@ -20,7 +22,7 @@ ADB access gives the connected computer control of the TV. Enable it only on a n
 
 ## Install
 
-Once the repository is public:
+Install from the public repository:
 
 ```sh
 omarchy plugin add https://github.com/kevinbsr/omarchy-firetv.git --enable

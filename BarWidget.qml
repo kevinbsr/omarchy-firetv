@@ -557,161 +557,121 @@ BarWidget {
       }
 
       Row {
-        anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width
         spacing: Style.space(12)
-        visible: root.actionAvailable("rewind") || root.actionAvailable("fast-forward")
 
-        Repeater {
-          model: ["rewind", "fast-forward"]
-          Rectangle {
-            id: seekButton
-            readonly property string actionId: modelData
-            width: Style.space(94)
-            height: Style.space(30)
-            radius: Style.space(8)
-            color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
-            enabled: root.actionAvailable(actionId) && !controlProc.running
-            opacity: enabled ? 1 : 0.4
-            Text {
-              anchors.centerIn: parent
-              text: seekButton.actionId === "rewind" ? "󰓕 Rewind" : "󰓖 Forward"
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-              font.pixelSize: Style.font.caption
-            }
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: seekButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-              onClicked: root.runControl(seekButton.actionId)
+        Column {
+          id: remoteColumn
+          width: Style.space(127)
+          spacing: Style.space(5)
+
+          Text {
+            text: "REMOTE"
+            color: root.bar ? root.bar.foreground : Color.foreground
+            opacity: 0.6
+            font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
+
+          Grid {
+            columns: 3
+            spacing: Style.space(5)
+
+            Repeater {
+              model: ["rewind", "up", "fast-forward",
+                      "left", "select", "right",
+                      "back", "down", "home"]
+              Rectangle {
+                id: remoteKey
+                readonly property string actionId: modelData
+                readonly property bool isSeek: actionId === "rewind" || actionId === "fast-forward"
+                width: Style.space(39)
+                height: width
+                radius: Style.space(9)
+                color: enabled ? (root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434") : "transparent"
+                enabled: !controlProc.running && (isSeek ? root.actionAvailable(actionId) : root.remoteAvailable())
+
+                Text {
+                  anchors.centerIn: parent
+                  text: remoteKey.actionId === "rewind" ? "󰓕" :
+                        remoteKey.actionId === "fast-forward" ? "󰓖" :
+                        remoteKey.actionId === "up" ? "󰁝" :
+                        remoteKey.actionId === "down" ? "󰁅" :
+                        remoteKey.actionId === "left" ? "󰁍" :
+                        remoteKey.actionId === "right" ? "󰁔" :
+                        remoteKey.actionId === "back" ? "󰌍" :
+                        remoteKey.actionId === "home" ? "󰋜" : "OK"
+                  visible: remoteKey.enabled || !remoteKey.isSeek
+                  color: root.bar ? root.bar.foreground : Color.foreground
+                  opacity: remoteKey.enabled ? 1 : 0.4
+                  font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
+                  font.pixelSize: Style.font.subtitle
+                }
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: remoteKey.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                  onClicked: root.runControl(remoteKey.actionId)
+                }
+              }
             }
           }
         }
-      }
 
-      Text {
-        text: "REMOTE"
-        color: root.bar ? root.bar.foreground : Color.foreground
-        opacity: 0.6
-        font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-        font.pixelSize: Style.font.caption
-        font.bold: true
-      }
+        Column {
+          width: parent.width - remoteColumn.width - parent.spacing
+          spacing: Style.space(5)
 
-      Grid {
-        anchors.horizontalCenter: parent.horizontalCenter
-        columns: 3
-        spacing: Style.space(5)
+          Text {
+            text: "APPS"
+            color: root.bar ? root.bar.foreground : Color.foreground
+            opacity: 0.6
+            font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
+            font.pixelSize: Style.font.caption
+            font.bold: true
+          }
 
-        Repeater {
-          model: ["", "up", "", "left", "select", "right", "", "down", ""]
-          Rectangle {
-            id: directionButton
-            readonly property string actionId: modelData
-            width: Style.space(39)
-            height: width
-            radius: Style.space(9)
-            color: actionId ? (root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434") : "transparent"
-            enabled: actionId !== "" && root.remoteAvailable() && !controlProc.running
-            opacity: enabled || !actionId ? 1 : 0.4
-            Text {
-              anchors.centerIn: parent
-              text: directionButton.actionId === "up" ? "󰁝" :
-                    directionButton.actionId === "down" ? "󰁅" :
-                    directionButton.actionId === "left" ? "󰁍" :
-                    directionButton.actionId === "right" ? "󰁔" :
-                    directionButton.actionId === "select" ? "OK" : ""
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-              font.pixelSize: Style.font.subtitle
-            }
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: directionButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-              onClicked: root.runControl(directionButton.actionId)
+          Flow {
+            width: parent.width
+            spacing: Style.space(4)
+            Repeater {
+              model: root.installedApps
+              Rectangle {
+                id: appShortcut
+                readonly property string appPackage: modelData.package
+                readonly property string appName: modelData.name
+                width: appLabel.implicitWidth + Style.space(12)
+                height: Style.space(26)
+                radius: Style.space(7)
+                color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
+                enabled: root.connected && !controlProc.running
+                opacity: enabled ? 1 : 0.4
+                Text {
+                  id: appLabel
+                  anchors.centerIn: parent
+                  text: appShortcut.appName
+                  color: root.bar ? root.bar.foreground : Color.foreground
+                  font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
+                  font.pixelSize: Style.font.caption
+                }
+                MouseArea {
+                  anchors.fill: parent
+                  cursorShape: appShortcut.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                  onClicked: root.launchApp(appShortcut.appPackage)
+                }
+              }
             }
           }
-        }
-      }
-
-      Row {
-        anchors.horizontalCenter: parent.horizontalCenter
-        spacing: Style.space(8)
-        Repeater {
-          model: ["back", "home"]
-          Rectangle {
-            id: remoteButton
-            readonly property string actionId: modelData
-            width: Style.space(82)
-            height: Style.space(30)
-            radius: Style.space(8)
-            color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
-            enabled: root.remoteAvailable() && !controlProc.running
-            opacity: enabled ? 1 : 0.4
-            Text {
-              anchors.centerIn: parent
-              text: remoteButton.actionId === "back" ? "󰌍 Back" : "󰋜 Home"
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-              font.pixelSize: Style.font.caption
-            }
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: remoteButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-              onClicked: root.runControl(remoteButton.actionId)
-            }
+          Text {
+            width: parent.width
+            visible: root.installedApps.length === 0
+            text: root.connected ? "Loading apps…" : "Apps unavailable"
+            color: root.bar ? root.bar.foreground : Color.foreground
+            opacity: 0.6
+            font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
+            font.pixelSize: Style.font.caption
           }
         }
-      }
-
-      Text {
-        text: "APPS"
-        color: root.bar ? root.bar.foreground : Color.foreground
-        opacity: 0.6
-        font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-        font.pixelSize: Style.font.caption
-        font.bold: true
-      }
-
-      Flow {
-        width: parent.width
-        spacing: Style.space(5)
-        Repeater {
-          model: root.installedApps
-          Rectangle {
-            id: appShortcut
-            readonly property string appPackage: modelData.package
-            readonly property string appName: modelData.name
-            width: appLabel.implicitWidth + Style.space(16)
-            height: Style.space(29)
-            radius: Style.space(8)
-            color: root.bar ? Qt.darker(root.bar.foreground, 3.2) : "#343434"
-            enabled: root.connected && !controlProc.running
-            opacity: enabled ? 1 : 0.4
-            Text {
-              id: appLabel
-              anchors.centerIn: parent
-              text: appShortcut.appName
-              color: root.bar ? root.bar.foreground : Color.foreground
-              font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-              font.pixelSize: Style.font.caption
-            }
-            MouseArea {
-              anchors.fill: parent
-              cursorShape: appShortcut.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-              onClicked: root.launchApp(appShortcut.appPackage)
-            }
-          }
-        }
-      }
-
-      Text {
-        width: parent.width
-        visible: root.installedApps.length === 0
-        text: root.connected ? "Loading app shortcuts…" : "Apps unavailable while disconnected"
-        color: root.bar ? root.bar.foreground : Color.foreground
-        opacity: 0.6
-        font.family: root.bar ? root.bar.fontFamily : "JetBrainsMono Nerd Font"
-        font.pixelSize: Style.font.caption
       }
 
       Text {
